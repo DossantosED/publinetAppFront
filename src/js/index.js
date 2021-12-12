@@ -15,7 +15,14 @@ $(document).ready(function(){
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
             },
+            beforeSend: function () {
+              document.querySelector('#cardDisplays').innerHTML = '<div class="spinner-border text-primary" role="status"></div>'
+            },
             success: function (data) {
+              document.querySelector('#cardDisplays').innerHTML = ""
+              if(data.length == 0){
+                document.querySelector('#cardDisplays').innerHTML = "No hay pantallas creadas"
+              }
               data.forEach(function(display){
                 document.querySelector('#cardDisplays').innerHTML = document.querySelector('#cardDisplays').innerHTML+  `<div class="card" id="card-${display.id}"><div class="card__image-holder"><img class="card__image" src="https://source.unsplash.com/300x225/?wave" alt="wave" /></div><div class="card-title"><a href="#" class="toggle-info btton"><span class="left"></span><span class="right"></span></a><h2>${display.name}<small>Empresa: ${getCompany(display.company_id).name}</small></h2></div><div class="card-flap flap1"><div class="card-description"><b>Precio:</b> $${display.price} <br> <b>Latitud:</b> ${display.latitude} <br> <b>Longitud:</b> ${display.longitude} <br> <b>Tipo:</b> ${display.type}</div><div class="card-flap flap2"><div class="card-actions"><a class="btton btnEdit" data-id="${display.id}">Editar</a> <a class="btton btnDelete" data-id="${display.id}">Eliminar</a></div></div></div></div>`;
               })
@@ -54,17 +61,34 @@ $(document).ready(function(){
             'Content-Type': 'application/json',
             'Accept': 'application/json',
         },
+        beforeSend: function () {
+          document.querySelector('#cardCompanies').innerHTML = '<div class="spinner-border text-primary" role="status"></div>'
+        },
         success: function (data) {
+          document.querySelector('#cardCompanies').innerHTML = ""
+          if(data.length == 0){
+            document.querySelector('#cardCompanies').innerHTML = "No hay empresas creadas"
+          }
           data.forEach(function(companies){
             var optionCompany = new Option("option text", companies.id);
+            var optionCompany2 = new Option("option text", companies.id);
             var optionCountry = new Option("option text", companies.country);
             $(optionCompany).html(companies.name);
+            $(optionCompany2).html(companies.name);
             $(optionCountry).html(companies.country);
-            $("#company").append(optionCompany)
-            $("#filtroEmpresa").append(optionCompany)
+            setTimeout(() => {
+              $("#company").append(optionCompany)
+            }, 2000);
+            $("#filtroEmpresa").append(optionCompany2)
             $("#filtroPais").append(optionCountry)
             document.querySelector('#cardCompanies').innerHTML = document.querySelector('#cardCompanies').innerHTML+  `<div class="card" id="card-company-${companies.id}"><div class="card__image-holder"><img class="card__image" src="https://source.unsplash.com/300x225/?wave" alt="wave" /></div><div class="card-title"><a href="#" class="toggle-info btton"><span class="left"></span><span class="right"></span></a><h2>${companies.name}<small>Pais: ${companies.country}</small></h2></div><div class="card-flap flap1"><div class="card-description"></div><div class="card-flap flap2"><div class="card-actions"><a class="btton btnEditEmpresa" data-id="${companies.id}">Editar</a> <a class="btton btnDeleteEmpresa" data-id="${companies.id}">Eliminar</a></div></div></div></div>`;
           })
+          $("#filtroPais option").each(function() {
+            $(this).siblings('[value="'+ this.value +'"]').remove();
+          });
+          $("#filtroEmpresa option").each(function() {
+            $(this).siblings('[value="'+ this.value +'"]').remove();
+          });
         }
       });
     }
@@ -96,6 +120,9 @@ $(document).ready(function(){
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
             },
+            beforeSend: function(data) {
+              document.querySelector('#cardDisplays').innerHTML = '<div class="spinner-border text-primary" role="status"></div>'
+            },
             success: function (data) {
               document.querySelector('#cardDisplays').innerHTML = "";
               if(data.displays.length == 0){
@@ -119,6 +146,9 @@ $(document).ready(function(){
           },
           data:{
             country: country
+          },
+          beforeSend: function(data) {
+            document.querySelector('#cardDisplays').innerHTML = '<div class="spinner-border text-primary" role="status"></div>'
           },
           success: function (data) {
             document.querySelector('#cardDisplays').innerHTML = "";
@@ -349,11 +379,35 @@ $(document).ready(function(){
             showConfirmButton: false,
             timer: 1000
           })
-          setTimeout(() => {
-            location.reload()
-          }, 1200);
+          $("#modalPantallas").modal('hide')
+          getDisplays()
+        },
+        error: function (data){
+          if(data.responseJSON.message == "The given data was invalid."){
+            insertarErrores('#name', 'errorDisplayName', data.responseJSON.errors.name);
+            insertarErrores('#company', 'errorDisplayComapny', data.responseJSON.errors.company_id);
+            insertarErrores('#latitude', 'errorDisplayLatitude', data.responseJSON.errors.latitude);
+            insertarErrores('#longitude', 'errorDisplayLongitude', data.responseJSON.errors.longitude);
+            insertarErrores('#price', 'errorDisplayPrice', data.responseJSON.errors.price);
+            insertarErrores('#type', 'errorDisplayType', 'Seleccione un tipo');
+          }else{
+            Swal.fire({
+              icon: 'error',
+              title: data.responseJSON.message
+            })
+          }
         }
       });
+    }
+
+    function insertarErrores (id, idError, error){
+      if ($('#'+idError).length == 0 && error){
+        $(id).after(`<p style="color: red" id="${idError}">${error}</p>`)
+      }else{
+        if(!error){
+          $('#'+idError).remove()
+        }
+      }
     }
 
     function createOrUpdateCompany(edit, id){
@@ -381,9 +435,19 @@ $(document).ready(function(){
             showConfirmButton: false,
             timer: 1000
           })
-          setTimeout(() => {
-            location.reload()
-          }, 1200);
+          $("#modalEmpresas").modal('hide')
+          getCompanies()
+        },
+        error: function (data){
+            if(data.responseJSON.message == "The given data was invalid."){
+              insertarErrores('#name_company', 'errorCompanyName', data.responseJSON.errors.name);
+              insertarErrores('#country', 'errorComapnyCountry', data.responseJSON.errors.country);
+            }else{
+              Swal.fire({
+                icon: 'error',
+                title: data.responseJSON.message
+              })
+            }
         }
       });
     }
