@@ -231,9 +231,11 @@ $(document).ready(function(){
                 timer: 1000
               })
               $('#card-'+id).hide('slow', function(){ $('#card-'+id).remove()});
-              if($('#cardDisplays')[0].children.length){
-                document.querySelector('#cardDisplays').innerHTML = "No hay pantallas creadas"
-              }
+              setTimeout(() => {
+                if($('#cardDisplays')[0].children.length == 0){
+                  document.querySelector('#cardDisplays').innerHTML = "No hay pantallas creadas"
+                }
+              }, 1000);
             },
             error : function (data){
               Swal.fire(data.message ?? 'Error desconocido', '', 'error')
@@ -271,9 +273,11 @@ $(document).ready(function(){
                 timer: 1000
               })
               $('#card-company-'+id).hide('slow', function(){ $('#card-company-'+id).remove()});
-              if($('#cardCompanies')[0].children.length){
-                document.querySelector('#cardCompanies').innerHTML = "No hay empresas creadas"
-              }
+              setTimeout(() => {
+                if($('#cardCompanies .card').length == 0){
+                  document.querySelector('#cardCompanies').innerHTML = "No hay empresas creadas"
+                }
+              }, 1000);
             },
             error : function (data){
               Swal.fire(data.responseJSON.message ?? 'Error desconocido', '', 'error')
