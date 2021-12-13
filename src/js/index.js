@@ -387,7 +387,7 @@ $(document).ready(function(){
       if($('#cardCompanies')[0].children.length == 0){
         Swal.fire({
           icon: "warning",
-          text: "Debe cear una empresa primero"
+          text: "Debe crear una empresa primero"
         })
       }else{
         $("#company option").each(function() {
