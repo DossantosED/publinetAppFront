@@ -38,6 +38,17 @@ a.btton:hover{
     text-align: center;
 }
 
+.editImage{
+	border-radius: 32px;
+    height: 32px;
+    padding: 0;
+    position: absolute;
+    right: 14px;
+    top: -200px;
+    width: 32px;
+	box-shadow: 0 2px 0px 0 rgb(0 0 0 / 25%);
+}
+
 .nav-tabs {
     border-bottom: 0; 
 }

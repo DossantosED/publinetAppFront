@@ -24,8 +24,17 @@ $(document).ready(function(){
                 document.querySelector('#cardDisplays').innerHTML = "No hay pantallas creadas"
               }
               data.forEach(function(display){
-                document.querySelector('#cardDisplays').innerHTML = document.querySelector('#cardDisplays').innerHTML+  `<div class="card" id="card-${display.id}"><div class="card__image-holder"><img class="card__image" src="https://source.unsplash.com/300x225/?wave" alt="wave" /></div><div class="card-title"><a href="#" class="toggle-info btton"><span class="left"></span><span class="right"></span></a><h2>${display.name}<small>Empresa: ${getCompany(display.company_id).name}</small></h2></div><div class="card-flap flap1"><div class="card-description"><b>Precio:</b> $${display.price} <br> <b>Latitud:</b> ${display.latitude} <br> <b>Longitud:</b> ${display.longitude} <br> <b>Tipo:</b> ${display.type}</div><div class="card-flap flap2"><div class="card-actions"><a class="btton btnEdit" data-id="${display.id}">Editar</a> <a class="btton btnDelete" data-id="${display.id}">Eliminar</a></div></div></div></div>`;
+                var image = display.image
+                if(image == "null" || image == null) { image = `https://source.unsplash.com/300x225/${display.name}`}else{
+                  image = `http://127.0.0.1:8000/images/displays/${image}`
+                }
+                document.querySelector('#cardDisplays').innerHTML = document.querySelector('#cardDisplays').innerHTML+  `<div class="card" id="card-${display.id}"><div class="card__image-holder"><img class="card__image" src="${image}" alt="wave" /></div><div class="card-title"><button class="btn btn-primary editImage" data-bs-toggle="tooltip" data-bs-placement="top" data-id="${display.id}" title="Editar imagen"><i class="fas fa-pen"></i></button><a href="#" class="toggle-info btton"><span class="left"></span><span class="right"></span></a><h2>${display.name}<small>Empresa: ${getCompany(display.company_id).name}</small></h2></div><div class="card-flap flap1"><div class="card-description"><b>Precio:</b> $${display.price} <br> <b>Latitud:</b> ${display.latitude} <br> <b>Longitud:</b> ${display.longitude} <br> <b>Tipo:</b> ${display.type}</div><div class="card-flap flap2"><div class="card-actions"><a class="btton btnEdit" data-id="${display.id}">Editar</a> <a class="btton btnDelete" data-id="${display.id}">Eliminar</a></div></div></div></div>`;
               })
+              var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+              tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+              })
+          
             }
         });
     }
@@ -81,12 +90,15 @@ $(document).ready(function(){
             }, 2000);
             $("#filtroEmpresa").append(optionCompany2)
             $("#filtroPais").append(optionCountry)
-            document.querySelector('#cardCompanies').innerHTML = document.querySelector('#cardCompanies').innerHTML+  `<div class="card" id="card-company-${companies.id}"><div class="card__image-holder"><img class="card__image" src="https://source.unsplash.com/300x225/?wave" alt="wave" /></div><div class="card-title"><a href="#" class="toggle-info btton"><span class="left"></span><span class="right"></span></a><h2>${companies.name}<small>Pais: ${companies.country}</small></h2></div><div class="card-flap flap1"><div class="card-description"></div><div class="card-flap flap2"><div class="card-actions"><a class="btton btnEditEmpresa" data-id="${companies.id}">Editar</a> <a class="btton btnDeleteEmpresa" data-id="${companies.id}">Eliminar</a></div></div></div></div>`;
+            document.querySelector('#cardCompanies').innerHTML = document.querySelector('#cardCompanies').innerHTML+  `<div class="card" id="card-company-${companies.id}"><div class="card__image-holder"><img class="card__image" src="https://source.unsplash.com/300x225/?${companies.name} alt="wave" /></div><div class="card-title"><a href="#" class="toggle-info btton"><span class="left"></span><span class="right"></span></a><h2>${companies.name}<small>Pais: ${companies.country}</small></h2></div><div class="card-flap flap1"><div class="card-description"></div><div class="card-flap flap2"><div class="card-actions"><a class="btton btnEditEmpresa" data-id="${companies.id}">Editar</a> <a class="btton btnDeleteEmpresa" data-id="${companies.id}">Eliminar</a></div></div></div></div>`;
           })
           $("#filtroPais option").each(function() {
             $(this).siblings('[value="'+ this.value +'"]').remove();
           });
           $("#filtroEmpresa option").each(function() {
+            $(this).siblings('[value="'+ this.value +'"]').remove();
+          });
+          $("#company option").each(function() {
             $(this).siblings('[value="'+ this.value +'"]').remove();
           });
         }
@@ -245,6 +257,40 @@ $(document).ready(function(){
       })
     });
 
+    $(document).on('click','.editImage',function(e){
+      let id = $(this).data('id');
+      $('#imageEdit').data("id",id)
+      $('#imageEdit').trigger("click")
+    });
+
+    $('#imageEdit').on("change", function(){
+      let id = $(this).data('id');
+      var paqueteDeDatos = new FormData();
+      paqueteDeDatos.append('file', $('#imageEdit')[0].files[0])
+      $.ajax({
+        type: "POST",
+        url: 'http://127.0.0.1:8000/api/updateimage/'+id,
+        dataType: "json",
+        processData: false,
+        contentType: false,
+        cache: false,
+        data: paqueteDeDatos,
+        success: function (data) {
+          Swal.fire({
+            position: 'top-end',
+            icon: 'success',
+            title: data.message,
+            showConfirmButton: false,
+            timer: 1000
+          })
+          getDisplays()
+        },
+        error : function (data){
+          Swal.fire(data.message ?? 'Error desconocido', '', 'error')
+        }
+      });
+    })
+
     $(document).on('click','.btnDeleteEmpresa',function(e){
       let id = $(this).data('id');
       Swal.fire({
@@ -288,6 +334,9 @@ $(document).ready(function(){
     });
 
     $(document).on('click','.btnEdit',function(e){
+      $("#company option").each(function() {
+        $(this).siblings('[value="'+ this.value +'"]').remove();
+      });
       let id = $(this).data('id');
       $('#guardarPantalla').attr('data-id',id);
       $('#tituloModalPantallas').text('Editar pantalla')
@@ -299,7 +348,8 @@ $(document).ready(function(){
       $('#longitude').val(display.longitude);
       $('#type').val(display.type);
       $('#price').val(display.price);
-      $('#guardarPantalla').attr('data-edit', "true");
+      $('#guardarPantalla').data('edit', true);
+      $('#divImagen').hide();
     });
 
     $(document).on('click','.btnEditEmpresa',function(e){
@@ -334,9 +384,19 @@ $(document).ready(function(){
     })
 
     $(document).on('click','#crearPantalla',function(e){
-      $('#tituloModalPantallas').text('Crear pantalla')
-      $('#guardarPantalla').attr('data-edit', "false");
-      $('#modalPantallas').modal('show')
+      if($('#cardCompanies')[0].children.length == 0){
+        Swal.fire({
+          icon: "warning",
+          text: "Debe cear una empresa primero"
+        })
+      }else{
+        $("#company option").each(function() {
+          $(this).siblings('[value="'+ this.value +'"]').remove();
+        });
+        $('#tituloModalPantallas').text('Crear pantalla')
+        $('#guardarPantalla').attr('data-edit', "false");
+        $('#modalPantallas').modal('show')
+      }
     });
 
     $(document).on('click','#crearEmpresa',function(e){
@@ -347,6 +407,10 @@ $(document).ready(function(){
 
 
     $("#modalPantallas").on("hidden.bs.modal", function(){
+      $('#divImagen').show();
+      $('.errores').hide();
+      $('#guardarPantalla').data('edit', false);
+      $('#image').val('')
       $('#name').val('');
       $('#company').val(0);
       $('#latitude').val('');
@@ -357,29 +421,51 @@ $(document).ready(function(){
 
     $("#modalEmpresas").on("hidden.bs.modal", function(){
       $('#name_company').val('');
+      $('.errores').hide();
       $('#country').val('');
     })
 
     function createOrUpdateDisplay(edit, id){
-      let type = 'POST'
-      url = 'http://127.0.0.1:8000/api/displays'
+      var type = 'POST'
+      let url = 'http://127.0.0.1:8000/api/displays'
+      var processData = false
+      var contentType = false
+      var paqueteDeDatos = new FormData();
+      var imagen = $('#image')[0].files[0];
+      paqueteDeDatos.append('name', $('#name').val());
+      paqueteDeDatos.append('company_id', $('#company').val());
+      paqueteDeDatos.append('latitude', $('#latitude').val());
+      paqueteDeDatos.append('longitude', $('#longitude').val());
+      paqueteDeDatos.append('type', $('#type').val());
+      paqueteDeDatos.append('price', $('#price').val());
+      paqueteDeDatos.append('file', imagen);
+      paqueteDeDatos.append('image', imagen ? imagen.name : null);
+
+      var formData = {
+        name : $('#name').val(),
+        company_id : $('#company').val(),
+        latitude : $('#latitude').val(),
+        longitude : $('#longitude').val(),
+        type : $('#type').val(),
+        price : $('#price').val()
+      }
+
       if(edit){
         type = 'PUT'
         url = 'http://127.0.0.1:8000/api/displays/'+id
+        paqueteDeDatos = formData
+        processData = true
+        contentType = 'application/x-www-form-urlencoded'
       }
-      var formData = {
-        name: $('#name').val(),
-        company_id: $('#company').val(),
-        latitude: $('#latitude').val(),
-        longitude: $('#longitude').val(),
-        type: $('#type').val(),
-        price: $('#price').val()
-      };
+
       $.ajax({
         type: type,
         url: url,
         dataType: "json",
-        data:formData
+        processData: processData,
+        contentType: contentType,
+        cache: false,
+        data:paqueteDeDatos
         ,
         success: function (data) {
           Swal.fire({
@@ -400,6 +486,7 @@ $(document).ready(function(){
             insertarErrores('#longitude', 'errorDisplayLongitude', data.responseJSON.errors.longitude);
             insertarErrores('#price', 'errorDisplayPrice', data.responseJSON.errors.price);
             insertarErrores('#type', 'errorDisplayType', 'Seleccione un tipo');
+            $('.errores').show()
           }else{
             Swal.fire({
               icon: 'error',
@@ -412,7 +499,7 @@ $(document).ready(function(){
 
     function insertarErrores (id, idError, error){
       if ($('#'+idError).length == 0 && error){
-        $(id).after(`<p style="color: red" id="${idError}">${error}</p>`)
+        $(id).after(`<p style="color: red" id="${idError}" class="errores">${error}</p>`)
       }else{
         if(!error){
           $('#'+idError).remove()
@@ -452,6 +539,7 @@ $(document).ready(function(){
             if(data.responseJSON.message == "The given data was invalid."){
               insertarErrores('#name_company', 'errorCompanyName', data.responseJSON.errors.name);
               insertarErrores('#country', 'errorComapnyCountry', data.responseJSON.errors.country);
+              $('.errores').show()
             }else{
               Swal.fire({
                 icon: 'error',
